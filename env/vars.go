@@ -40,3 +40,19 @@ func GetJwtSecret() string {
 	return getEnvVar("API_JWT_SECRET")
 
 }
+
+func GetInfraApiUrl() string {
+	return getEnvVar("INFLOW_INFRA_API")
+
+}
+func GetInfraJWTSecret() string {
+	return getEnvVar("INFLOW_INFRA_JWT_SECRET")
+
+}
+func GetDbStoreBasePath()string{
+	p:=getEnvVar("DB_STORE_PATH")
+	if p!=""{
+		return p
+	}
+	return "db"
+}

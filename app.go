@@ -1,8 +1,10 @@
 package main
 
 import (
+
 	apiHandlers "github.com/Inflowenger/dev-backend/api"
 	"github.com/Inflowenger/dev-backend/env"
+	"github.com/Inflowenger/dev-backend/inflow"
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
@@ -10,6 +12,10 @@ import (
 )
 
 func main() {
+	err:=inflow.InitInflowConnection()
+	if err!=nil{
+		panic(err)
+	}
 	app := fiber.New(fiber.Config{
 		JSONEncoder: sonic.Marshal,
 		JSONDecoder: sonic.Unmarshal,

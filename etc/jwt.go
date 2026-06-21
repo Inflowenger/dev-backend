@@ -10,6 +10,6 @@ import (
 func HS256SecKeyHandler() fiber.Handler{
 	
 	return jwtware.New(jwtware.Config{
-		SigningKey: jwtware.SigningKey{Key:env.GetJwtSecret()},
+		SigningKey: jwtware.SigningKey{Key:[]byte(env.GetJwtSecret())},
 	})
 }
