@@ -31,7 +31,7 @@ func addNewFlow(ctx fiber.Ctx) error {
 func getFlowById(c fiber.Ctx) error {
 	flowId := c.Params("flowId")
 	if !strings.HasPrefix(flowId, repository.FLOW_INDEX_PREFIX) {
-		repository.FlowIndexByString(flowId)
+		flowId = repository.FlowIndexByString(flowId)
 	}
 	flow := repository.GetFlowById(flowId)
 	if flow == nil {
