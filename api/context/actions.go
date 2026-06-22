@@ -1,4 +1,4 @@
-package flowControllers
+package contextControllers
 
 import (
 	"strings"
@@ -9,8 +9,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-func addNewFlow(ctx fiber.Ctx) error {
-	input := models.FlowRecord{}
+func addNewContext(ctx fiber.Ctx) error {
+	input := models.ContextRecord{}
 	if err := ctx.Bind().Body(&input); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrBadRequest.Code, Message: fiber.ErrBadRequest.Message}})
 	}
@@ -18,9 +18,9 @@ func addNewFlow(ctx fiber.Ctx) error {
 		input.CreatedAt = time.Now().Unix()
 	}
 	if strings.TrimSpace(input.Title) == "" {
-		input.Title = "untitled workflow"
+		input.Title = "untitled context"
 	}
-	err := repository.UpsertFlow(&input)
+	err := repository.UpsertContext(&input)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrInternalServerError.Code, Message: fiber.ErrInternalServerError.Message}})
 
@@ -28,28 +28,28 @@ func addNewFlow(ctx fiber.Ctx) error {
 	return ctx.JSON(input)
 }
 
-func getFlowById(c fiber.Ctx) error {
-	flowId := c.Params("flowId")
-	if !strings.HasPrefix(flowId, repository.FLOW_INDEX_PREFIX) {
-		flowId = repository.FlowIndexByString(flowId)
+func getContextById(c fiber.Ctx) error {
+	contextId := c.Params("contextId")
+	if !strings.HasPrefix(contextId, repository.CONTEXT_INDEX_PREFIX) {
+		contextId = repository.ContextIndexByString(contextId)
 	}
-	flow := repository.GetFlowById(flowId)
-	if flow == nil {
-		return c.Status(fiber.StatusNotFound).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrNotFound.Code, Message: "given flow id not found"}})
+	context := repository.GetContextById(contextId)
+	if context == nil {
+		return c.Status(fiber.StatusNotFound).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrNotFound.Code, Message: "given context id not found"}})
 
 	}
-	return c.JSON(models.Response{Data: flow})
+	return c.JSON(models.Response{Data: context})
 }
-func deleteFlowById(c fiber.Ctx) error {
-	flowId := c.Params("flowId")
-	if !strings.HasPrefix(flowId, repository.FLOW_INDEX_PREFIX) {
-		flowId = repository.FlowIndexByString(flowId)
+func deleteContextById(c fiber.Ctx) error {
+	contextId := c.Params("contextId")
+	if !strings.HasPrefix(contextId, repository.CONTEXT_INDEX_PREFIX) {
+		contextId = repository.ContextIndexByString(contextId)
 	}
-	err := repository.Delete(flowId)
+	err := repository.Delete(contextId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrInternalServerError.Code, Message: fiber.ErrInternalServerError.Message}})
 	}
-	return c.Status(fiber.StatusAccepted).JSON(models.Response{Data: map[string]any{"flowId": flowId}})
+	return c.Status(fiber.StatusAccepted).JSON(models.Response{Data: map[string]any{"contextId": contextId}})
 
 }
 func list(c fiber.Ctx) error {
@@ -57,7 +57,7 @@ func list(c fiber.Ctx) error {
 	if err := c.Bind().Query(&q); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrBadRequest.Code, Message: fiber.ErrBadRequest.Message}})
 	}
-	l, cursor, err := repository.GetFlowList(q.Cursor, int(q.PerPage))
+	l, cursor, err := repository.GetContextList(q.Cursor, int(q.PerPage))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrInternalServerError.Code, Message: fiber.ErrInternalServerError.Message}})
 	}

@@ -37,3 +37,10 @@ func GetFlowById(key string) *models.FlowRecord {
 	f, _ := db.Get(key)
 	return f
 }
+
+func GetFlowList(last string, limit int) ([]models.FlowRecord, string, error) {
+	db := GetBadgerDb(models.FlowRecord{})
+
+	return db.ListValues(FLOW_INDEX_PREFIX, last, limit, true)
+
+}

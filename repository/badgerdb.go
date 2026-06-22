@@ -122,10 +122,11 @@ func (b *BadgerHolder[T]) ListValues(seek string, last string, limit int, desc b
 		defer it.Close()
 		seekbyte := []byte(seek)
 		if last != "" {
-			seekbyte = []byte(fmt.Sprintf("%s%s", seek, last))
-		} else {
-			seekbyte = []byte(seek)
-		}
+			seekbyte =[]byte(last)// []byte(fmt.Sprintf("%s:%s", seek, last))
+		} 
+		// else {
+		// 	seekbyte = []byte(seek)
+		// }
 
 		if opts.Reverse {
 			seekbyte = append(seekbyte, 0xFF)
@@ -135,7 +136,7 @@ func (b *BadgerHolder[T]) ListValues(seek string, last string, limit int, desc b
 			if !bytes.HasPrefix(key, []byte(seek)) {
 				continue
 			}
-			if bytes.Equal(key, seekbyte) {
+			if bytes.Equal(key, []byte(last)) {
 				continue
 			}
 			item, err := txn.Get(key)
@@ -149,10 +150,10 @@ func (b *BadgerHolder[T]) ListValues(seek string, last string, limit int, desc b
 				result = append(result, val)
 				return nil
 			})
-			parts := strings.Split(string(key), ":")
-			if len(parts) > 1 {
-				lastKey = parts[len(parts)-1]
-			}
+			// parts := strings.Split(string(key), ":")
+			// if len(parts) > 1 {
+				lastKey = string(key)
+			// }
 
 		}
 
