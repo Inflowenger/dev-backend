@@ -32,10 +32,10 @@ func UpsertFlow(f *models.FlowRecord) error {
 	return UpsertWithKeys([]string{f.ID}, f)
 }
 
-func GetFlowById(key string) *models.FlowRecord {
+func GetFlowById(key string) (*models.FlowRecord ,error){
 	db := GetBadgerDb(models.FlowRecord{})
-	f, _ := db.Get(key)
-	return f
+	return  db.Get(key)
+
 }
 
 func GetFlowList(last string, limit int) ([]models.FlowRecord, string, error) {

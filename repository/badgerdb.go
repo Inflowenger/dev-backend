@@ -1,10 +1,8 @@
 package repository
 
-
 import (
 	"bytes"
 	"fmt"
-	"strings"
 
 	"github.com/Inflowenger/dev-backend/env"
 	"github.com/bytedance/sonic"
@@ -25,29 +23,29 @@ func connect() {
 	if err != nil {
 		panic(err)
 	}
-	firstLoad:=true
-	if err:= GetRaw("idx_seq",&[]byte{});err==nil{
-		firstLoad=false
+	firstLoad := true
+	if err := GetRaw("idx_seq", &[]byte{}); err == nil {
+		firstLoad = false
 	}
 
-	if firstLoad{
-	idx, err := Seq() // initialize sequence
-	if err != nil {
-		panic(err)
-	}
+	if firstLoad {
+		idx, err := Seq() // initialize sequence
+		if err != nil {
+			panic(err)
+		}
 
-	if idx < 10 {
-		for {
-			idx, err := Seq()
-			if err != nil {
-				panic(err)
-			}
-			if idx > 9 {
-				break
+		if idx < 10 {
+			for {
+				idx, err := Seq()
+				if err != nil {
+					panic(err)
+				}
+				if idx > 9 {
+					break
+				}
 			}
 		}
 	}
-}
 }
 func GetBadgerDb[T any](model T) *BadgerHolder[T] {
 
@@ -59,57 +57,6 @@ func GetBadgerDb[T any](model T) *BadgerHolder[T] {
 	return badgerHolder
 }
 
-func (b *BadgerHolder[T]) List(seek string, last string, limit int, desc bool) (map[string]T, string, error) {
-
-	var result map[string]T = make(map[string]T)
-	var lastKey string
-
-	err := b.db.View(func(txn *badger.Txn) error {
-		opts := badger.DefaultIteratorOptions
-		opts.Reverse = desc
-		it := txn.NewIterator(opts)
-		defer it.Close()
-		seekbyte := []byte(seek)
-		if last != "" {
-			seekbyte = []byte(fmt.Sprintf("%s:%s", seek, last))
-		} else {
-			seekbyte = []byte(seek)
-		}
-
-		if opts.Reverse {
-			seekbyte = append(seekbyte, 0xFF)
-		}
-		for it.Seek(seekbyte); len(result) < limit && it.Valid(); it.Next() {
-			key := it.Item().Key()
-			if !bytes.HasPrefix(key, []byte(seek)) {
-				continue
-			}
-			if bytes.Equal(key, seekbyte) {
-				continue
-			}
-			item, err := txn.Get(key)
-			if err != nil {
-				continue
-			}
-
-			_ = item.Value(func(v []byte) error {
-				var val T
-				sonic.Unmarshal(v, &val)
-				result[string(key)] = val
-				return nil
-			})
-			parts := strings.Split(string(key), ":")
-			if len(parts) > 1 {
-				lastKey = parts[len(parts)-1]
-			}
-
-		}
-
-		return nil
-	})
-
-	return result, lastKey, err
-}
 func (b *BadgerHolder[T]) ListValues(seek string, last string, limit int, desc bool) ([]T, string, error) {
 
 	var result = make([]T, 0)
@@ -122,11 +69,8 @@ func (b *BadgerHolder[T]) ListValues(seek string, last string, limit int, desc b
 		defer it.Close()
 		seekbyte := []byte(seek)
 		if last != "" {
-			seekbyte =[]byte(last)// []byte(fmt.Sprintf("%s:%s", seek, last))
-		} 
-		// else {
-		// 	seekbyte = []byte(seek)
-		// }
+			seekbyte = []byte(last)
+		}
 
 		if opts.Reverse {
 			seekbyte = append(seekbyte, 0xFF)
@@ -150,10 +94,7 @@ func (b *BadgerHolder[T]) ListValues(seek string, last string, limit int, desc b
 				result = append(result, val)
 				return nil
 			})
-			// parts := strings.Split(string(key), ":")
-			// if len(parts) > 1 {
-				lastKey = string(key)
-			// }
+			lastKey = string(key)
 
 		}
 

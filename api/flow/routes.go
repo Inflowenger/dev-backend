@@ -9,4 +9,8 @@ func Register(api fiber.Router) {
 	flowGroup.Get("/id/:flowId", getFlowById)
 	flowGroup.Delete("/id/:flowId", deleteFlowById)
 
+	// process requests
+	procGroup:=api.Group("ps")
+	procGroup.Post("/flow/:flowId",newProcess)
+	procGroup.Post("/stop/:pid",stopByPid)
 }

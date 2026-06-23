@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"strings"
+
 )
 const (
 	defaultPage    = 1
@@ -37,3 +38,5 @@ func (i *PaginationParams) Validate() error {
 	}
 	return nil
 }
+
+

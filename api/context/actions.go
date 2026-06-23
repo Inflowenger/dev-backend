@@ -4,28 +4,30 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Inflowenger/dev-backend/etc"
 	"github.com/Inflowenger/dev-backend/models"
 	"github.com/Inflowenger/dev-backend/repository"
 	"github.com/gofiber/fiber/v3"
 )
 
-func addNewContext(ctx fiber.Ctx) error {
+func addNewContext(c fiber.Ctx) error {
 	input := models.ContextRecord{}
-	if err := ctx.Bind().Body(&input); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrBadRequest.Code, Message: fiber.ErrBadRequest.Message}})
+	if err := c.Bind().Body(&input); err != nil {
+		return etc.Send(c, fiber.StatusBadRequest, nil, models.ErrorResponse{Code: fiber.ErrBadRequest.Code, Message: fiber.ErrBadRequest.Message})
 	}
 	if input.ID == "" {
 		input.CreatedAt = time.Now().Unix()
 	}
+	input.UpdatedAt = time.Now().Unix()
 	if strings.TrimSpace(input.Title) == "" {
 		input.Title = "untitled context"
 	}
 	err := repository.UpsertContext(&input)
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrInternalServerError.Code, Message: fiber.ErrInternalServerError.Message}})
+		return etc.Send(c, fiber.StatusInternalServerError, nil, models.ErrorResponse{Code: fiber.ErrInternalServerError.Code, Message: fiber.ErrInternalServerError.Message})
 
 	}
-	return ctx.JSON(input)
+	return etc.Send(c, fiber.StatusOK,input,nil)
 }
 
 func getContextById(c fiber.Ctx) error {
@@ -35,10 +37,10 @@ func getContextById(c fiber.Ctx) error {
 	}
 	context := repository.GetContextById(contextId)
 	if context == nil {
-		return c.Status(fiber.StatusNotFound).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrNotFound.Code, Message: "given context id not found"}})
+		return etc.Send(c, fiber.StatusNotFound, nil, models.ErrorResponse{Code: fiber.ErrNotFound.Code, Message: "given context id not found"})
 
 	}
-	return c.JSON(models.Response{Data: context})
+	return etc.Send(c, fiber.StatusOK,context,nil)
 }
 func deleteContextById(c fiber.Ctx) error {
 	contextId := c.Params("contextId")
@@ -47,19 +49,19 @@ func deleteContextById(c fiber.Ctx) error {
 	}
 	err := repository.Delete(contextId)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrInternalServerError.Code, Message: fiber.ErrInternalServerError.Message}})
+		return etc.Send(c, fiber.StatusInternalServerError, nil, models.ErrorResponse{Code: fiber.ErrInternalServerError.Code, Message: fiber.ErrInternalServerError.Message})
 	}
-	return c.Status(fiber.StatusAccepted).JSON(models.Response{Data: map[string]any{"contextId": contextId}})
+	return etc.Send(c,fiber.StatusAccepted, map[string]any{"contextId": contextId},nil)
 
 }
 func list(c fiber.Ctx) error {
 	q := models.PaginationParams{}
 	if err := c.Bind().Query(&q); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrBadRequest.Code, Message: fiber.ErrBadRequest.Message}})
+		return etc.Send(c, fiber.StatusBadRequest, nil,  models.ErrorResponse{Code: fiber.ErrBadRequest.Code, Message: fiber.ErrBadRequest.Message})
 	}
 	l, cursor, err := repository.GetContextList(q.Cursor, int(q.PerPage))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(models.Response{Data: nil, Error: models.ErrorResponse{Code: fiber.ErrInternalServerError.Code, Message: fiber.ErrInternalServerError.Message}})
+		return etc.Send(c, fiber.StatusInternalServerError, nil,  models.ErrorResponse{Code: fiber.ErrInternalServerError.Code, Message: fiber.ErrInternalServerError.Message})
 	}
-	return c.JSON(map[string]any{"list": l, "next": cursor, "error": nil})
+	return etc.Send(c, fiber.StatusOK, map[string]any{"list": l, "next": cursor}, err)
 }

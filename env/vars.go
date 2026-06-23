@@ -37,7 +37,7 @@ func GetApiPort() string {
 }
 
 func GetJwtSecret() string {
-	return getEnvVar("API_JWT_SECRET")
+	return getEnvVar("INFLOW_INFRA_JWT_SECRET") // to access to infra api through app panel we use same secret key for both 
 
 }
 
