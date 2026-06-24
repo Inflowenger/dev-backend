@@ -6,6 +6,7 @@ import (
 	"github.com/Inflowenger/dev-backend/models"
 	compiler "github.com/Inflowenger/inflow-fusion/compilers/vueFlow"
 	inflowModels "github.com/Inflowenger/inflow-fusion/models"
+	inflowNodes "github.com/Inflowenger/inflow-fusion/nodes"
 )
 
 /*
@@ -65,54 +66,96 @@ func NodeBuilder(vfn compiler.VueFlowNode) (*inflowModels.Node, error) {
 	if !ok {
 		return nil, fmt.Errorf("invalid node data ")
 	}
-	inflowNode := inflowModels.Node{
+	node := inflowModels.Node{
 		ID:    vfn.ID,
 		Title: nodeData["title"].(string),
 	}
 	if nodeData["key"] != nil {
-		inflowNode.Key = nodeData["key"].(string)
+		node.Key = nodeData["key"].(string)
 	}
 	if nodeData["scope"] != nil {
-		inflowNode.Scope = nodeData["scope"].(string)
+		node.Scope = nodeData["scope"].(string)
 
 	}
 	switch vfn.Type {
 	case NODE_START:
-		inflowNode.Type = inflowModels.VoidNodeType
+		node.Type = inflowModels.VoidNodeType
 	case NODE_CODE:
-		inflowNode.Code = &inflowModels.CodeRule{
-			Lang:      nodeData["lang"].(string),
-			LogicRule: nodeData["logic_rule"].(string),
-			OpaData:   map[string]any{},
-			OpaResult: nodeData["opa_result"].(string),
+		if lang, ok := nodeData["lang"].(string); ok {
+			if lang == string(inflowModels.JavaScriptLang) {
+				newJsNode := inflowNodes.NewJsNode(nodeData["logic_rule"].(string))
+				node.Code = &newJsNode.CodeRule
+			} else if lang == string(inflowModels.OPALang) {
+				criteria := map[string]any{}
+				if conds, ok := nodeData["conditions"].([]any); ok {
+					for _, el := range conds {
+						if field, ok := el.(map[string]any); ok {
+							criteria[field["key"].(string)] = field["value"]
+						}
+					}
+				}
+				newOpaNode := inflowNodes.NewOpaNode(
+					nodeData["logic_rule"].(string),
+					nodeData["opa_result"].(string),
+					inflowNodes.WithCriteriaData(criteria),
+				)
+				node.Code = &newOpaNode.CodeRule
+			}
+
 		}
+
 	case NODE_CONTRACT:
-		inflowNode.Contract = &inflowModels.ContractRule{
-			Lang:       nodeData["lang"].(string),
-			LogicRule:  nodeData["logic_rule"].(string),
-			Conditions: map[string]any{},
-			OpaResult:  nodeData["opa_result"].(string),
-		}
+		criteria := map[string]any{}
 		if conds, ok := nodeData["conditions"].([]any); ok {
 			for _, el := range conds {
 				if field, ok := el.(map[string]any); ok {
-					inflowNode.Contract.Conditions[field["key"].(string)] = field["value"]
+					criteria[field["key"].(string)] = field["value"]
 				}
 			}
 		}
+		if lang, ok := nodeData["lang"].(string); ok {
+			if lang == string(inflowModels.JavaScriptLang) {
+				newContract := inflowNodes.NewJsRuleLogicNode(
+					inflowNodes.WithContractLogicCode(nodeData["logic_rule"].(string)),
+					inflowNodes.WithContractConditions(criteria),
+				)
+				node.Contract = &newContract.ContractRule
+			} else if lang == string(inflowModels.OPALang) {
+				newContract := inflowNodes.NewOpaRuleLogicNode(nodeData["opa_result"].(string),
+					inflowNodes.WithContractLogicCode(nodeData["logic_rule"].(string)),
+					inflowNodes.WithContractConditions(criteria),
+				)
+				node.Contract = &newContract.ContractRule
+
+			}
+		}
+
 	case NODE_EVENT_SVC:
-		inflowNode.Type = inflowModels.EventNodeType
-
+		node.Type = inflowModels.EventNodeType
+		if subject, ok := nodeData["serviceTopic"].(string); ok {
+			evNode := inflowNodes.NewSvcNode(subject)
+			node.Event = &evNode.EventRule
+		}
 	case NODE_GOTO:
-		inflowNode.Type = inflowModels.GoToNodeType
+		node.Type = inflowModels.GoToNodeType
+		gotoNode := inflowNodes.NewGotoNode()
+		if targetFlow, ok := nodeData["goto"].(map[string]any); ok {
+			gotoNode.From(targetFlow["flowId"].(string), targetFlow["from_nodeId"].(string))
+			gotoNode.To(targetFlow["flowId"].(string), targetFlow["end_nodeId"].(string))
 
+		}
+		node.GoTo = &gotoNode.GoToRule
 	case NODE_PLUGIN:
-		inflowNode.Type = inflowModels.PluginNodeType
-
+		node.Type = inflowModels.PluginNodeType
+		pluginNode, err := inflowNodes.NewPluginNode(nodeData["title"].(string))
+		if err != nil {
+			return nil, err
+		}
+		node.Plugin = &pluginNode.PluginRule
 	case NODE_VOID:
-		inflowNode.Type = inflowModels.VoidNodeType
+		node.Type = inflowModels.VoidNodeType
 
 	}
 
-	return &inflowNode, nil
+	return &node, nil
 }
