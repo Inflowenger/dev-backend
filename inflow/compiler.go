@@ -36,8 +36,7 @@ const (
 	NODE_EVENT_SVC = "event"
 	NODE_GOTO      = "goto"
 )
-
-func FLowCompiler(f models.FlowRecord) (map[string]*inflowModels.Node, error) {
+func GetStartNodeId(f models.FlowRecord)(string,error){
 	startNodeId := ""
 	for _, n := range f.ViewFlow.Nodes {
 		if n.Type == NODE_START {
@@ -46,18 +45,29 @@ func FLowCompiler(f models.FlowRecord) (map[string]*inflowModels.Node, error) {
 		}
 	}
 	if startNodeId == "" {
-		return nil, fmt.Errorf("start node is required")
+		return startNodeId, fmt.Errorf("start node is required")
+	}
+	return startNodeId,nil
+}
+func FLowCompiler(f models.FlowRecord) (string,map[string]*inflowModels.Node, error) {
+	startNodeId,err:=GetStartNodeId(f)
+	if err!=nil{
+		return startNodeId,nil,err
 	}
 	cmpr := compiler.NewVueFlowCompiler(compiler.WithEachNodeFunc(NodeBuilder))
 	if cmpr == nil {
-		return nil, fmt.Errorf("error occurred in compile process")
+		return startNodeId,nil, fmt.Errorf("error occurred in compile process")
 	}
 	l, errs := cmpr.Compile(startNodeId, f.ViewFlow)
 	for _, e := range errs {
-		return l, e
+		return startNodeId,l, e
+	}
+	compiledNodes:=[]inflowModels.Node{}
+	for _,el:=range l{
+		compiledNodes = append(compiledNodes, *el)
 	}
 
-	return l, nil
+	return startNodeId,l, nil
 }
 
 func NodeBuilder(vfn compiler.VueFlowNode) (*inflowModels.Node, error) {
@@ -114,13 +124,13 @@ func NodeBuilder(vfn compiler.VueFlowNode) (*inflowModels.Node, error) {
 			}
 		}
 		if lang, ok := nodeData["lang"].(string); ok {
-			if lang == string(inflowModels.JavaScriptLang) {
+			if lang == string(inflowModels.JavaScriptLang) {  //js lang
 				newContract := inflowNodes.NewJsRuleLogicNode(
 					inflowNodes.WithContractLogicCode(nodeData["logic_rule"].(string)),
 					inflowNodes.WithContractConditions(criteria),
 				)
 				node.Contract = &newContract.ContractRule
-			} else if lang == string(inflowModels.OPALang) {
+			} else if lang == string(inflowModels.OPALang) { // opa-reo lang
 				newContract := inflowNodes.NewOpaRuleLogicNode(nodeData["opa_result"].(string),
 					inflowNodes.WithContractLogicCode(nodeData["logic_rule"].(string)),
 					inflowNodes.WithContractConditions(criteria),

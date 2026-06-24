@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 
 	apiHandlers "github.com/Inflowenger/dev-backend/api"
 	"github.com/Inflowenger/dev-backend/env"
@@ -12,8 +13,17 @@ import (
 )
 
 func main() {
+	defer func(){
+		if r:=recover();r!=nil{
+			fmt.Println(r)
+		}
+	}()
 	err:=inflow.InitInflowConnection()
 	if err!=nil{
+		panic(err)
+	}
+	err=inflow.LoadSvcNodehandlers()
+		if err!=nil{
 		panic(err)
 	}
 	app := fiber.New(fiber.Config{

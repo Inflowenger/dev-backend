@@ -6,9 +6,11 @@ require (
 	github.com/Inflowenger/inflow-fusion v0.0.0-20260621161918-ce8ebfbfbefb
 	github.com/bytedance/sonic v1.15.2
 	github.com/dgraph-io/badger/v4 v4.9.2
+	github.com/go-playground/validator/v10 v10.30.3
 	github.com/gofiber/contrib/v3/jwt v1.1.6
 	github.com/gofiber/fiber/v3 v3.3.0
 	github.com/joho/godotenv v1.5.1
+	github.com/mehdi-shokohi/fiberValidation v1.0.8
 	github.com/nats-io/nats.go v1.52.0
 )
 
@@ -22,9 +24,12 @@ require (
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/go-co-op/gocron v1.37.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/gofiber/schema v1.7.2 // indirect
 	github.com/gofiber/utils/v2 v2.1.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
@@ -32,6 +37,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/nats-io/jwt/v2 v2.8.2 // indirect

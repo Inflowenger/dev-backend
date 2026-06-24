@@ -1,6 +1,12 @@
 package flowControllers
 
-import "github.com/gofiber/fiber/v3"
+import (
+	"github.com/Inflowenger/dev-backend/models"
+	validation "github.com/mehdi-shokohi/fiberValidation"
+
+	"github.com/gofiber/fiber/v3"
+)
+	
 
 func Register(api fiber.Router) {
 	flowGroup := api.Group("flow")
@@ -11,6 +17,8 @@ func Register(api fiber.Router) {
 
 	// process requests
 	procGroup:=api.Group("ps")
-	procGroup.Post("/flow/:flowId",newProcess)
+	procGroup.Post("",validation.ValidateBodyAs(models.ProcessRequestInput{}),newProcess)
+	procGroup.Post("/compile",validation.ValidateBodyAs(models.ProcessRequestInput{}),compile)
+
 	procGroup.Post("/stop/:pid",stopByPid)
 }
