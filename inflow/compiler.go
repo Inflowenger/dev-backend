@@ -91,6 +91,8 @@ func NodeBuilder(vfn compiler.VueFlowNode) (*inflowModels.Node, error) {
 	case NODE_START:
 		node.Type = inflowModels.VoidNodeType
 	case NODE_CODE:
+		node.Type = inflowModels.CodeNodeType
+
 		if lang, ok := nodeData["lang"].(string); ok {
 			if lang == string(inflowModels.JavaScriptLang) {
 				newJsNode := inflowNodes.NewJsNode(nodeData["logic_rule"].(string))
@@ -115,6 +117,8 @@ func NodeBuilder(vfn compiler.VueFlowNode) (*inflowModels.Node, error) {
 		}
 
 	case NODE_CONTRACT:
+				node.Type = inflowModels.RuleNodeType
+
 		criteria := map[string]any{}
 		if conds, ok := nodeData["conditions"].([]any); ok {
 			for _, el := range conds {

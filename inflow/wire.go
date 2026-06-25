@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Inflowenger/dev-backend/models"
 	"github.com/Inflowenger/dev-backend/repository"
 	inflowModels "github.com/Inflowenger/inflow-fusion/models"
 	"github.com/bytedance/sonic"
@@ -17,9 +18,8 @@ func (isvc *InflowWire) RetrieveContext(msg *nats.Msg) {
 	// get context data from db
 	parts := strings.Split(msg.Subject, ".")
 	ctxId := parts[len(parts)-1]
-	rec:=repository.GetContextById(ctxId)
-	ctxData,_:=sonic.MarshalString(rec.Context)
-	wantedContext:=inflowModels.ContextDoc{Header : rec.Header,Data:ctxData}
+	rec := repository.GetContextById(ctxId)
+	wantedContext := inflowModels.ContextDoc{Header: rec.Header, Data: rec.Context}
 	b, _ := sonic.Marshal(wantedContext)
 	msg.Respond(b)
 	// msg.Respond([]byte(`{"header":{},"data":"{\"node1\":{\"b\":2,\"sum\":3,\"a\":1},\"node2\":{\"a\":1,\"b\":2,\"sum\":3}}"}`))
@@ -27,6 +27,26 @@ func (isvc *InflowWire) RetrieveContext(msg *nats.Msg) {
 
 func (isvc *InflowWire) UpdateContext(msg *nats.Msg) {
 	fmt.Println(string(msg.Data)) // save to db
+	contextId := msg.Header.Get("contextId")
+	newCtxData := inflowModels.ContextDoc{}
+	err := sonic.Unmarshal(msg.Data, &newCtxData)
+	if err != nil {
+		fmt.Printf("error in recieved context data with error : %s\n data : %s ", err.Error(), string(msg.Data))
+		return
+	}
+	if strings.HasPrefix(contextId, repository.CONTEXT_INDEX_PREFIX) {
+		ctxRecord := repository.GetContextById(contextId)
+		if ctxRecord == nil {
+			fmt.Printf("given context id not found \ndata : %s ", string(msg.Data))
+			return
+		}
+		ctxRecord.Context = newCtxData.Data
+		ctxRecord.Header = newCtxData.Header
+		ctxRecord.UpdatedBy = models.LastChange{By: models.ByFlow, Address: msg.Header.Get("flowId")}
+
+		repository.UpsertContext(ctxRecord)
+
+	}
 	msg.Respond([]byte(`accepted`))
 }
 
@@ -41,8 +61,8 @@ func (isvc *InflowWire) RetrieveFlow(msg *nats.Msg) {
 		fmt.Println("given flow id not found or exception error occurred")
 	}
 	_, cmp, err := FLowCompiler(*rec)
-	wantedFlow:=inflowModels.Flow{
-		UUID: flowId,
+	wantedFlow := inflowModels.Flow{
+		UUID:  flowId,
 		Nodes: []inflowModels.Node{},
 	}
 	for _, el := range cmp {
