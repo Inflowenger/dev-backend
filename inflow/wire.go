@@ -19,6 +19,10 @@ func (isvc *InflowWire) RetrieveContext(msg *nats.Msg) {
 	parts := strings.Split(msg.Subject, ".")
 	ctxId := parts[len(parts)-1]
 	rec := repository.GetContextById(ctxId)
+	if rec==nil{
+		msg.Respond([]byte(`{}`))
+		return
+	}
 	wantedContext := inflowModels.ContextDoc{Header: rec.Header, Data: rec.Context}
 	b, _ := sonic.Marshal(wantedContext)
 	msg.Respond(b)
@@ -28,6 +32,7 @@ func (isvc *InflowWire) RetrieveContext(msg *nats.Msg) {
 func (isvc *InflowWire) UpdateContext(msg *nats.Msg) {
 	fmt.Println(string(msg.Data)) // save to db
 	contextId := msg.Header.Get("contextId")
+	fmt.Println("recieve Update on : ",contextId)
 	newCtxData := inflowModels.ContextDoc{}
 	err := sonic.Unmarshal(msg.Data, &newCtxData)
 	if err != nil {

@@ -10,7 +10,7 @@ require (
 	github.com/gofiber/contrib/v3/jwt v1.1.6
 	github.com/gofiber/fiber/v3 v3.3.0
 	github.com/joho/godotenv v1.5.1
-	github.com/mehdi-shokohi/fiberValidation v1.0.8
+	github.com/mehdi-shokohi/fiberValidation v1.0.9
 	github.com/nats-io/nats.go v1.52.0
 )
 

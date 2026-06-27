@@ -33,8 +33,13 @@ func newProcess(c fiber.Ctx) error {
 	)
 	if err != nil {
 		fmt.Println(err.Error())
+
 	}
 	resp, err := proc.Exec(c.Context())
+	if err!=nil{
+			return etc.Send(c, fiber.StatusNotAcceptable, nil,map[string]any{ "response":resp,"error": err.Error()})
+
+	}
 	return etc.Send(c, fiber.StatusAccepted, map[string]any{"pid": resp.Data.PID, "selected_resource": proc.GetResource()}, err)
 }
 func compile(c fiber.Ctx) error {

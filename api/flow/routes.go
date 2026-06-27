@@ -17,8 +17,8 @@ func Register(api fiber.Router) {
 
 	// process requests
 	procGroup:=api.Group("ps")
-	procGroup.Post("",validation.ValidateBodyAs(models.ProcessRequestInput{}),newProcess)
-	procGroup.Post("/compile",validation.ValidateBodyAs(models.ProcessRequestInput{}),compile)
+	procGroup.Post("",validation.ValidateBodyAs[models.ProcessRequestInput](),newProcess)
+	procGroup.Post("/compile",validation.ValidateBodyAs[models.ProcessRequestInput](),compile)
 
 	procGroup.Post("/stop/:pid",stopByPid)
 }
