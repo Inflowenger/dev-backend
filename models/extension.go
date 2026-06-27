@@ -5,13 +5,13 @@ import "github.com/Inflowenger/inflow-fusion/models"
 type ExtensionType string
 
 const (
-	ExtEventBaseType  ExtensionType = "event"
+	ExtEventBaseType  ExtensionType = "extrinsic"
 	ExtPluginBaseType ExtensionType = "plugin"
 )
 
 type ExtensionRecord struct {
 	ID          string         `json:"id"`
-	Type        ExtensionType  `json:"type" validate:"oneof=plugin event"`
+	Type        ExtensionType  `json:"type" validate:"inflow_required,oneof=plugin event"`
 	Name        string         `json:"name"`
 	Description string         `json:"description"`
 	Icon        Icon           `json:"icon"`

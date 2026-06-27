@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	contextControllers "github.com/Inflowenger/dev-backend/api/context"
+	extensionControllers "github.com/Inflowenger/dev-backend/api/extension"
 	flowControllers "github.com/Inflowenger/dev-backend/api/flow"
 	"github.com/Inflowenger/dev-backend/env"
 	"github.com/Inflowenger/dev-backend/etc"
@@ -26,6 +27,7 @@ func RegisterAll(api fiber.Router) {
 	api.All("/infra/*", infraProxyHandler)
 	flowControllers.Register(api)
 	contextControllers.Register(api)
+	extensionControllers.Register(api)
 }
 
 func infraProxyHandler(c fiber.Ctx) error {
