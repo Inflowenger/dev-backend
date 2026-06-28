@@ -8,6 +8,8 @@ import (
 	"github.com/Inflowenger/dev-backend/models"
 	"github.com/Inflowenger/dev-backend/repository"
 	"github.com/gofiber/fiber/v3"
+		svcHandler "github.com/Inflowenger/inflow-fusion/svcHandler"
+
 )
 
 func addNewExt(c fiber.Ctx) error {
@@ -65,4 +67,8 @@ func getExtensionById(c fiber.Ctx) error {
 
 	}
 	return etc.Send(c, fiber.StatusOK, ext, nil)
+}
+func listOfExtHandlers(c fiber.Ctx)error{
+	list:=svcHandler.GetAllSvcs()
+	return etc.Send(c,fiber.StatusOK,list,nil)
 }

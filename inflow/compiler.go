@@ -1,12 +1,14 @@
 package inflow
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/Inflowenger/dev-backend/models"
 	compiler "github.com/Inflowenger/inflow-fusion/compilers/vueFlow"
 	inflowModels "github.com/Inflowenger/inflow-fusion/models"
 	inflowNodes "github.com/Inflowenger/inflow-fusion/nodes"
+	"github.com/Inflowenger/inflow-fusion/svcHandler"
 )
 
 /*
@@ -28,15 +30,19 @@ const items: PaletteItem[] = [
 ]
 */
 const (
-	NODE_PLUGIN    = "plugin"
-	NODE_START     = "startNode"
-	NODE_VOID      = "void"
-	NODE_CONTRACT  = "contract"
-	NODE_CODE      = "code"
-	NODE_EXT_SVC = "extrinsic"
-	NODE_GOTO      = "goto"
+	NODE_PLUGIN   = "pluginNative"
+	NODE_START    = "startNode"
+	NODE_VOID     = "void"
+	NODE_CONTRACT = "contract"
+	NODE_CODE     = "code"
+	NODE_EXT_SVC  = "extrinsic"
+	NODE_GOTO     = "goto"
+
+	// Extensions
+	NODE_MY_A = "my_a_ext"
 )
-func GetStartNodeId(f models.FlowRecord)(string,error){
+
+func GetStartNodeId(f models.FlowRecord) (string, error) {
 	startNodeId := ""
 	for _, n := range f.ViewFlow.Nodes {
 		if n.Type == NODE_START {
@@ -47,27 +53,27 @@ func GetStartNodeId(f models.FlowRecord)(string,error){
 	if startNodeId == "" {
 		return startNodeId, fmt.Errorf("start node is required")
 	}
-	return startNodeId,nil
+	return startNodeId, nil
 }
-func FLowCompiler(f models.FlowRecord) (string,map[string]*inflowModels.Node, error) {
-	startNodeId,err:=GetStartNodeId(f)
-	if err!=nil{
-		return startNodeId,nil,err
+func FLowCompiler(f models.FlowRecord) (string, map[string]*inflowModels.Node, error) {
+	startNodeId, err := GetStartNodeId(f)
+	if err != nil {
+		return startNodeId, nil, err
 	}
 	cmpr := compiler.NewVueFlowCompiler(compiler.WithEachNodeFunc(NodeBuilder))
 	if cmpr == nil {
-		return startNodeId,nil, fmt.Errorf("error occurred in compile process")
+		return startNodeId, nil, fmt.Errorf("error occurred in compile process")
 	}
 	l, errs := cmpr.Compile(startNodeId, f.ViewFlow)
 	for _, e := range errs {
-		return startNodeId,l, e
+		return startNodeId, l, e
 	}
-	compiledNodes:=[]inflowModels.Node{}
-	for _,el:=range l{
+	compiledNodes := []inflowModels.Node{}
+	for _, el := range l {
 		compiledNodes = append(compiledNodes, *el)
 	}
 
-	return startNodeId,l, nil
+	return startNodeId, l, nil
 }
 
 func NodeBuilder(vfn compiler.VueFlowNode) (*inflowModels.Node, error) {
@@ -90,6 +96,23 @@ func NodeBuilder(vfn compiler.VueFlowNode) (*inflowModels.Node, error) {
 	switch vfn.Type {
 	case NODE_START:
 		node.Type = inflowModels.VoidNodeType
+	case NODE_MY_A:
+		node.Type = inflowModels.ExtrinsicNodeType
+		ext := models.ExtensionRecord{}
+		json.Unmarshal([]byte(nodeData["extension_raw"].(string)), &ext)
+		values := map[string]any{}
+		for k, v := range ext.BindTo.Values {
+			values[k] = v
+		}
+		svc := svcHandler.GetSvc(ext.BindTo.TopicKey)
+		if svc == "" {
+			return nil, fmt.Errorf("invalid data as %s", NODE_MY_A)
+		}
+		evNode := inflowNodes.NewExtrinsicSvcNode(
+			svcHandler.SvcTopic(svc).MakeReqSubjectWithParams(values),
+		)
+		evNode.ExtrinsicRule.ReqTimeoutSecound = 5
+		node.Extrinsic = &evNode.ExtrinsicRule
 	case NODE_CODE:
 		node.Type = inflowModels.CodeNodeType
 
@@ -117,7 +140,7 @@ func NodeBuilder(vfn compiler.VueFlowNode) (*inflowModels.Node, error) {
 		}
 
 	case NODE_CONTRACT:
-				node.Type = inflowModels.RuleNodeType
+		node.Type = inflowModels.RuleNodeType
 
 		criteria := map[string]any{}
 		if conds, ok := nodeData["conditions"].([]any); ok {
@@ -128,7 +151,7 @@ func NodeBuilder(vfn compiler.VueFlowNode) (*inflowModels.Node, error) {
 			}
 		}
 		if lang, ok := nodeData["lang"].(string); ok {
-			if lang == string(inflowModels.JavaScriptLang) {  //js lang
+			if lang == string(inflowModels.JavaScriptLang) { //js lang
 				newContract := inflowNodes.NewJsRuleLogicNode(
 					inflowNodes.WithContractLogicCode(nodeData["logic_rule"].(string)),
 					inflowNodes.WithContractConditions(criteria),
@@ -161,10 +184,19 @@ func NodeBuilder(vfn compiler.VueFlowNode) (*inflowModels.Node, error) {
 		node.GoTo = &gotoNode.GoToRule
 	case NODE_PLUGIN:
 		node.Type = inflowModels.PluginNodeType
-		pluginNode, err := inflowNodes.NewPluginNode(nodeData["title"].(string))
+		// pluginUniqId:=fmt.Sprintf("%s-%s",nodeData["title"],vfn.ID)
+		pluginNode, err := inflowNodes.NewPluginNode(
+			nodeData["title"].(string),
+			// inflowNodes.WithUniqId[*inflowNodes.PluginNode](pluginUniqId),
+			inflowNodes.WithCustomPrefix(nodeData["subject_prefix"].(string)),
+			inflowNodes.WithIdleWaitMinutes(int8(nodeData["idle_min"].(float64))),
+			)
+			pluginNode.Body = nodeData["body"].(map[string]any)
+			pluginNode.Request = nodeData["request"].(string)
 		if err != nil {
 			return nil, err
 		}
+
 		node.Plugin = &pluginNode.PluginRule
 	case NODE_VOID:
 		node.Type = inflowModels.VoidNodeType

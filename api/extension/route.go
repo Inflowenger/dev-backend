@@ -12,5 +12,6 @@ func Register(api fiber.Router) {
 	extGroup.Get("",list)
 	extGroup.Get("/id/:extId", getExtensionById)
 	extGroup.Delete("/id/:extId", deleteExtById)
+	extGroup.Get("/extrinsics",listOfExtHandlers)
 
 }
